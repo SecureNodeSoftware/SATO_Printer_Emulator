@@ -23,6 +23,10 @@ def build():
         "--hidden-import", "src.fonts",
         "--hidden-import", "barcode",
         "--hidden-import", "PIL",
+        "--hidden-import", "PyQt6",
+        "--hidden-import", "PyQt6.QtWidgets",
+        "--hidden-import", "PyQt6.QtCore",
+        "--hidden-import", "PyQt6.QtGui",
         "run.py",
     ]
 
