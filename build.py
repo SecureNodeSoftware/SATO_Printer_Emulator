@@ -15,7 +15,6 @@ def build():
         "--name", "SATOPrinterEmulator",
         "--onefile",
         "--windowed",
-        "--add-data", f"resources{os.pathsep}resources",
         "--hidden-import", "src.gui",
         "--hidden-import", "src.parser",
         "--hidden-import", "src.renderer",

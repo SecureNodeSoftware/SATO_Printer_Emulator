@@ -60,7 +60,7 @@ MULTI_CHAR_COMMANDS = sorted([
     "#E",
 ], key=len, reverse=True)
 
-SINGLE_CHAR_COMMANDS = list("AZQHVPLEBDGFCMSUJqe%$(&/0@*")
+SINGLE_CHAR_COMMANDS = set("AZQHVPLEBDGFCMSUJqe%$(&/0@*")
 
 
 def tokenize_sbpl(data: bytes) -> list:

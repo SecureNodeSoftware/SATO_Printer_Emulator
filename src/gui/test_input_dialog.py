@@ -145,7 +145,8 @@ class TestInputDialog(QDialog):
         if name in SAMPLES:
             # Convert to displayable escaped format
             raw = SAMPLES[name]
-            display = raw.replace("\x1b", "\\x1b").replace("\x02", "\\x02").replace("\x03", "\\x03")
+            display = (raw.replace("\x1b", "\\x1b").replace("\x02", "\\x02")
+                       .replace("\x03", "\\x03").replace("\r", "\\r").replace("\n", "\\n"))
             self.input_edit.setText(display)
 
     def get_sbpl_data(self) -> bytes:
