@@ -94,7 +94,7 @@ def load_config() -> AppConfig:
     """Load configuration from disk."""
     if CONFIG_FILE.exists():
         try:
-            with open(CONFIG_FILE, "r") as f:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
             printer = PrinterConfig(**data.get("printer", {}))
             network = NetworkConfig(**data.get("network", {}))
@@ -120,5 +120,5 @@ def save_config(config: AppConfig) -> None:
         "window_height": config.window_height,
         "last_save_dir": config.last_save_dir,
     }
-    with open(CONFIG_FILE, "w") as f:
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)

@@ -2,7 +2,7 @@
 
 import io
 import math
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFont
 from typing import Optional
 
 from src.config.settings import PrinterConfig
@@ -224,6 +224,7 @@ class LabelRenderer:
             bc.write(buffer, options=options)
             buffer.seek(0)
             img = Image.open(buffer).convert("1")
+            img.load()  # Ensure pixel data is read before buffer may be garbage collected
             return img
         except Exception:
             return None
@@ -287,19 +288,18 @@ class LabelRenderer:
 
     def _render_inversion(self, instr: RenderInversion):
         """Render black/white inversion region."""
-        x1 = instr.x
-        y1 = instr.y
+        x1 = max(0, instr.x)
+        y1 = max(0, instr.y)
         x2 = min(instr.x + instr.width, self.width)
         y2 = min(instr.y + instr.height, self.height)
 
-        # Invert pixels in the region
-        for py in range(max(0, y1), y2):
-            for px in range(max(0, x1), x2):
-                try:
-                    current = self.image.getpixel((px, py))
-                    self.image.putpixel((px, py), 1 - current)
-                except IndexError:
-                    pass
+        if x2 <= x1 or y2 <= y1:
+            return
+
+        # Crop, invert, and paste back
+        region = self.image.crop((x1, y1, x2, y2))
+        inverted = ImageChops.invert(region)
+        self.image.paste(inverted, (x1, y1))
 
     def _render_graphic(self, instr: RenderGraphic):
         """Render raw graphic data."""
@@ -448,16 +448,11 @@ class LabelRenderer:
             return
 
         cropped = src.crop((src_x, src_y, crop_right, crop_bottom))
-        # Merge: any black pixel in src makes the destination black
+        # Merge: if src pixel is black (0), dest becomes black
+        # In 1-bit mode, multiply = AND: both must be white (1) to stay white
         region = self.image.crop((paste_x, paste_y,
                                    paste_x + cropped.width,
                                    paste_y + cropped.height))
-        # AND merge for 1-bit: 0=black, 1=white, so AND keeps black from both
-        merged = Image.composite(Image.new("1", cropped.size, 1), region,
-                                  cropped)
-        # Actually we want: if src pixel is black (0), dest becomes black
-        # Use: dest = dest AND src (in 1-bit, AND = both must be white to stay white)
-        from PIL import ImageChops
         merged = ImageChops.multiply(region, cropped)
         self.image.paste(merged, (paste_x, paste_y))
 

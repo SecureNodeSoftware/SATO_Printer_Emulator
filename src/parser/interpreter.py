@@ -127,6 +127,27 @@ BARCODE_TYPE_MAP = {
 class SBPLInterpreter:
     """Interprets SBPL commands and produces render instructions."""
 
+    # Map command names (including special characters) to handler method names
+    _COMMAND_DISPATCH = {
+        "A": "_cmd_A", "Z": "_cmd_Z", "Q": "_cmd_Q",
+        "H": "_cmd_H", "V": "_cmd_V", "P": "_cmd_P",
+        "L": "_cmd_L", "E": "_cmd_E",
+        "%": "_cmd_percent_",
+        "XU": "_cmd_XU", "XS": "_cmd_XS", "XM": "_cmd_XM",
+        "XB": "_cmd_XB", "XL": "_cmd_XL",
+        "U": "_cmd_U", "S": "_cmd_S", "M": "_cmd_M",
+        "WB": "_cmd_WB", "WL": "_cmd_WL",
+        "OA": "_cmd_OA", "OB": "_cmd_OB",
+        "$": "_cmd_dollar_", "$=": "_cmd_dollar_eq_",
+        "RD": "_cmd_RD",
+        "B": "_cmd_B", "D": "_cmd_D", "BD": "_cmd_BD",
+        "BG": "_cmd_BG", "BC": "_cmd_BC", "BI": "_cmd_BI", "BP": "_cmd_BP",
+        "FW": "_cmd_FW", "(": "_cmd_lparen_", "G": "_cmd_G",
+        "&": "_cmd_amp_", "/": "_cmd_slash_",
+        "F": "_cmd_F", "A1": "_cmd_A1", "#E": "_cmd_hash_E",
+        "CS": "_cmd_CS", "C": "_cmd_C",
+    }
+
     def __init__(self):
         self.reset()
 
@@ -158,9 +179,11 @@ class SBPLInterpreter:
 
     def _dispatch(self, cmd: SBPLCommand):
         """Dispatch a command to its handler."""
-        handler = getattr(self, f"_cmd_{cmd.command.replace('#', 'hash_').replace('$', 'dollar_').replace('%', 'percent_').replace('(', 'lparen_').replace('/', 'slash_').replace('&', 'amp_').replace('*', 'star_').replace('~', 'tilde_').replace('=', 'eq_')}", None)
-        if handler:
-            handler(cmd)
+        method_name = self._COMMAND_DISPATCH.get(cmd.command)
+        if method_name:
+            handler = getattr(self, method_name, None)
+            if handler:
+                handler(cmd)
 
     # --- Control Commands ---
 

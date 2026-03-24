@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 from PyQt6.QtWidgets import (
@@ -359,9 +360,9 @@ class MainWindow(QMainWindow):
             self.renderer = LabelRenderer(self.config.printer)
             image = self.renderer.render(instructions)
 
-            # Store in history
+            # Store in history (use job's raw_data, not the full receive buffer)
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            self.job_history.append((timestamp, data, image))
+            self.job_history.append((timestamp, job.raw_data, image))
 
             # Add to job list
             item = QListWidgetItem(f"{source or timestamp} - {job.quantity} label(s)")
@@ -435,9 +436,11 @@ class MainWindow(QMainWindow):
         if filepath:
             if not filepath.lower().endswith(".png"):
                 filepath += ".png"
-            self.renderer.image = image.convert("1")
-            self.renderer.save_png(filepath)
-            self.config.last_save_dir = str(__import__('pathlib').Path(filepath).parent)
+            # Save without mutating the renderer's current image
+            output = image.convert("L")
+            dpi = self.config.printer.dpi
+            output.save(filepath, "PNG", dpi=(dpi, dpi))
+            self.config.last_save_dir = str(Path(filepath).parent)
             save_config(self.config)
             self.status_bar.showMessage(f"Saved: {filepath}", 3000)
 
@@ -472,7 +475,7 @@ class MainWindow(QMainWindow):
             try:
                 with open(filepath, "rb") as f:
                     data = f.read()
-                self._process_sbpl_data(data, f"File: {__import__('pathlib').Path(filepath).name}")
+                self._process_sbpl_data(data, f"File: {Path(filepath).name}")
             except (IOError, OSError) as e:
                 QMessageBox.critical(self, "Error", f"Failed to load file:\n{e}")
 

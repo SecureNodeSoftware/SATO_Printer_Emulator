@@ -32,6 +32,7 @@ class PrinterTCPServer:
         self._running = False
         self._thread: Optional[threading.Thread] = None
         self._client_threads: list = []
+        self._max_buffer_size = 10 * 1024 * 1024  # 10 MB max buffer per client
 
     @property
     def is_running(self) -> bool:
@@ -73,6 +74,10 @@ class PrinterTCPServer:
         if self._thread:
             self._thread.join(timeout=3.0)
             self._thread = None
+        # Join active client threads
+        for t in self._client_threads:
+            t.join(timeout=2.0)
+        self._client_threads.clear()
         logger.info("Server stopped")
 
     def _accept_loop(self):
@@ -85,6 +90,9 @@ class PrinterTCPServer:
 
                 if self.on_client_connected:
                     self.on_client_connected(client_addr)
+
+                # Clean up completed threads
+                self._client_threads = [t for t in self._client_threads if t.is_alive()]
 
                 t = threading.Thread(
                     target=self._handle_client,
@@ -109,6 +117,9 @@ class PrinterTCPServer:
                 try:
                     data = client_socket.recv(self.config.buffer_size)
                     if not data:
+                        break
+                    if len(buffer) + len(data) > self._max_buffer_size:
+                        logger.warning(f"Client {client_addr} exceeded max buffer size, disconnecting")
                         break
                     buffer.extend(data)
 
